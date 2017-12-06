@@ -4,16 +4,32 @@
 
 #include "StringSet.h"
 
-StringSet::StringSet() = default;
+StringSet::StringSet(int stringLength, int numStrings)
+        : stringLength(stringLength), numStrings(numStrings) {
 
-StringSet::StringSet(char** data, int stringLength, int numStrings)
-        : data(data), stringLength(stringLength), numStrings(numStrings) {}
+    // One contiguous memory block
+    buffer = new char[numStrings * stringLength];
+    data = new char* [numStrings];
+    for (int i = 0; i < numStrings; ++i) {
+        data[i] = &buffer[i*stringLength];
+    }
+
+    // Many small chunks of memory
+//    data = new char* [numStrings];
+//    for (int i = 0; i < numStrings; ++i) {
+//        data[i] = new char[stringLength];
+//    }
+
+}
 
 StringSet::~StringSet() {
-    for (int i = 0; i < numStrings; ++i) {
-        delete[] data[i];
-    }
+    delete[] buffer;
     delete[] data;
+
+//    for (int i = 0; i < numStrings; ++i) {
+//        delete[] data[i];
+//    }
+//    delete[] data;
 }
 
 char** StringSet::getData() const {

@@ -5,14 +5,17 @@
 #ifndef AAL_STRINGSET_H
 #define AAL_STRINGSET_H
 
+#include <cmath>
+#include <vector>
+
 class StringSet {
+    char* buffer = nullptr;
     char** data = nullptr;
     int stringLength;
     int numStrings;
 
 public:
-    StringSet();
-    StringSet(char** data, int stringLength, int numStrings);
+    StringSet(int stringLength, int numStrings);
     virtual ~StringSet();
     char** getData() const;
     int getStringLength() const;

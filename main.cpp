@@ -27,8 +27,8 @@ int main(int argc, char *argv[]) {
 //    }
 
     RandomStringGenerator rsg;
-    int length = 10;
-    int numStrings = 200;
+    int length = 5;
+    int numStrings = 10;
     StringSet stringSet = rsg.generateStringSet(length, numStrings);
     for (int i = 0; i < numStrings; ++i) {
         for (int j = 0; j < length; ++j) {
@@ -38,7 +38,8 @@ int main(int argc, char *argv[]) {
     }
 
     CommonStringFinder csf;
-    cout << endl << csf.find(stringSet);
+//    cout << endl << csf.bruteForce(stringSet);
+    cout << endl << csf.heuristic(stringSet);
 
 
     return 0;

@@ -11,9 +11,12 @@
 class CommonStringFinder {
     char* key;
     int stringLength;
+    int numStrings;
     void incrementKey();
 public:
-    std::string find(StringSet &set);
+    std::string bruteForce(StringSet &set);
+    std::string heuristic(StringSet &set);
+    bool changeKey(int i, std::vector<int>* matchingStrings, int* matchingLetters);
 };
 
 #endif //AAL_COMMONSTRINGFINDER_H
