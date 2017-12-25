@@ -7,6 +7,8 @@
 
 #include "../data/StringSet.h"
 #include <string>
+#include <list>
+#include <algorithm>
 
 class CommonStringFinder {
     char* key;
@@ -16,7 +18,9 @@ class CommonStringFinder {
 public:
     std::string bruteForce(StringSet &set);
     std::string heuristic(StringSet &set);
-    bool changeKey(int i, std::vector<int>* matchingStrings, int* matchingLetters);
+private:
+    bool changeKey(StringSet &set, int currentStrIndex, std::list<int>* matchingStrings, int* matchingLetters);
+    void deallocate(const std::list<int>* matchingStrings, const int* matchingLetters);
 };
 
 #endif //AAL_COMMONSTRINGFINDER_H

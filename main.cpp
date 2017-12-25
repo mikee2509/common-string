@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void static printUsage(char *name) {
+void static printUsage(char* name) {
     cerr << "Usage:\n"
          << name << " -t1                            \tRead data from stdin and print results to stdout\n"
          << name << " -t2 <gen_options>              \tGenerate random data and print results to stdout\n"
@@ -20,7 +20,7 @@ void static printUsage(char *name) {
          << endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 //    printUsage("AAL");
 //    for (string line; getline(cin, line);) {
 //        cout << line << endl;
@@ -38,9 +38,9 @@ int main(int argc, char *argv[]) {
     }
 
     CommonStringFinder csf;
-//    cout << endl << csf.bruteForce(stringSet);
-    cout << endl << csf.heuristic(stringSet);
-
+    cout << endl;
+    cout << "Brute force: " << csf.bruteForce(stringSet) << endl;
+    cout << "Heuristic:   " << csf.heuristic(stringSet) << endl;
 
     return 0;
 }

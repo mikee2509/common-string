@@ -2,7 +2,6 @@
 // Created by michal on 26.11.17.
 //
 
-#include <algorithm>
 #include "CommonStringFinder.h"
 
 using namespace std;
@@ -40,7 +39,7 @@ string CommonStringFinder::bruteForce(StringSet &set) {
             }
         }
         if (!nextKey) {
-            const string &result = string(key);
+            const string result = string(key);
             delete[] key;
             key = nullptr;
             return result;
@@ -50,7 +49,7 @@ string CommonStringFinder::bruteForce(StringSet &set) {
 
     delete[] key;
     key = nullptr;
-    return string("No match");
+    return string("Solution doesn't exist");
 }
 
 void CommonStringFinder::incrementKey() {
@@ -67,14 +66,14 @@ std::string CommonStringFinder::heuristic(StringSet &set) {
     stringLength = set.getStringLength();
     numStrings = set.getNumStrings();
 
-    key = new char[stringLength]; //TODO delete
+    key = new char[stringLength];
     char** data = set.getData();
 
     // For each letter in key hold indices of Strings matching at that position 
-    auto* matchingStrings = new vector<int>[stringLength]; //TODO deallocate
+    auto* matchingStrings = new list<int>[stringLength];
 
     // For each String hold the number of letters which match with current key
-    auto* matchingLetters = new int[numStrings]; //TODO deallocate
+    auto* matchingLetters = new int[numStrings]();
 
     // Initialize key to first string with *s replaced by 0s
     for (int i = 0; i < stringLength; ++i) {
@@ -86,51 +85,70 @@ std::string CommonStringFinder::heuristic(StringSet &set) {
     }
 
     for (int str = 0; str < numStrings; ++str) {
+        int numStars = 0;
         for (int letter = 0; letter < stringLength; ++letter) {
             if (data[str][letter] == key[letter]) {
                 matchingLetters[str] += 1;
                 matchingStrings[letter].push_back(str);
+            } else if (data[str][letter] == '*') {
+                ++numStars;
             }
         }
+        if (numStars == stringLength) {
+            deallocate(matchingStrings, matchingLetters);
+            return string("Solution doesn't exist");
+        }
         if (matchingLetters[str] == 0) {
-            bool result = changeKey(str, matchingStrings, matchingLetters);
-            //TODO handle result
+            if (!changeKey(set, str, matchingStrings, matchingLetters)) {
+                deallocate(matchingStrings, matchingLetters);
+                return string("Solution not found");
+            }
         }
     }
 
+    const string result = string(key);
+    deallocate(matchingStrings, matchingLetters);
+    return result;
+
 }
 
-bool compareByVecSize(pair<int, vector<int>*> &lhs, pair<int, vector<int>*> &rhs) {
-    return lhs.second->size() < rhs.second->size();
+void CommonStringFinder::deallocate(const list<int>* matchingStrings, const int* matchingLetters) {
+    delete[] matchingLetters;
+    delete[] matchingStrings;
+    delete[] key;
+    key = nullptr;
 }
 
-bool CommonStringFinder::changeKey(int currentStrIndex, vector<int>* matchingStrings, int* matchingLetters) {
+bool CommonStringFinder::changeKey(StringSet &set,
+                                   int currentStrIndex,
+                                   list<int>* matchingStrings,
+                                   int* matchingLetters) {
     // Pair of matchingStrings array index and pointer to corresponding matchingStrings array element
-    typedef pair<int, vector<int>*> myPair;
+    typedef pair<int, list<int>*> myPair;
 
-    vector<myPair> myVec;
-    myVec.reserve(static_cast<unsigned long>(stringLength));
+    vector<myPair> myPairVec;
+    myPairVec.reserve(static_cast<unsigned long>(stringLength));
     for (int i = 0; i < stringLength; ++i) {
-        myVec.emplace_back(i, &matchingStrings[i]);
+        myPairVec.emplace_back(i, &matchingStrings[i]);
     }
 
-    sort(myVec.begin(),
-         myVec.end(),
+    sort(myPairVec.begin(),
+         myPairVec.end(),
          [](myPair &lhs, myPair &rhs) { return lhs.second->size() < rhs.second->size(); });
 
     int keyIndexToChange = -1;
 
     // For each letter in key starting with the one having the least matchingStrings
-    for (auto &pair : myVec) {
+    for (auto &pair : myPairVec) {
 
-        vector<int> &pVec = *pair.second;
+        list<int> &pList = *pair.second;
         int &keyIndex = pair.first;
 
         // Is it safe to change key letter at this keyIndex
         bool isSafe = true;
 
         // For each matchingString
-        for (int &stringIndex : pVec) {
+        for (int &stringIndex : pList) {
             // If the number of matching letters is less than two (TODO change to equals 1)
             if (matchingLetters[stringIndex] < 2) {
                 isSafe = false;
@@ -148,9 +166,22 @@ bool CommonStringFinder::changeKey(int currentStrIndex, vector<int>* matchingStr
         return false;
     }
 
-    //TODO change key
-    //TODO increment matchingLetters counts
-    //TODO update matchingStrings vectors
+    char oldKeyLetter = key[keyIndexToChange];
+    char newKeyLetter = oldKeyLetter == '0' ? '1' : '0';
+    key[keyIndexToChange] = newKeyLetter;
+    char** data = set.getData();
+
+    for (int str = 0; str < currentStrIndex + 1; ++str) {
+        if (data[str][keyIndexToChange] == newKeyLetter) {
+            matchingLetters[str] += 1;
+            matchingStrings[keyIndexToChange].push_back(str);
+        } else if (data[str][keyIndexToChange] == oldKeyLetter) {
+            matchingLetters[str] -= 1;
+            matchingStrings[keyIndexToChange].remove(str);
+        }
+    }
+
+    return true;
 }
 
 
