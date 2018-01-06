@@ -39,7 +39,7 @@ public:
                                 const std::function<void(const char* key,
                                                          const StringSet &set,
                                                          const ulong* matchingLetters,
-                                                         const std::list<ulong>* matchingStrings,
+                                                         const std::vector<ulong>* matchingStrings,
                                                          ulong currentStrIndex,
                                                          bool keyChanged)> &peekFunction = nullptr);
 
@@ -48,7 +48,7 @@ private:
     bool changeKey(char* key,
                    StringSet &set,
                    ulong currentStrIndex,
-                   std::list<ulong>* matchingStrings,
+                   std::vector<ulong>* matchingStrings,
                    ulong* matchingLetters,
                    std::vector<ulong> &changeablePositions);
 };

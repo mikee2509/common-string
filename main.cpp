@@ -13,7 +13,7 @@ int t1Mode(vector<string> &args);
 int t2Mode(vector<string> &args);
 void solveOnce(StringSet &set, bool withInteractiveMode);
 void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
-                  const std::list<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged);
+                  const vector<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged);
 int t3Mode(vector<string> &args);
 
 static const char* const kName = "AAL";
@@ -167,7 +167,7 @@ void solveOnce(StringSet &set, bool withInteractiveMode) {
 }
 
 void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
-                  const std::list<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged) {
+                  const vector<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged) {
     char** data = set.getData();
     auto stringLength = set.getStringLength();
     cout << "Key: " << string(key, stringLength) << (keyChanged ? " (new)\n" : "\n");

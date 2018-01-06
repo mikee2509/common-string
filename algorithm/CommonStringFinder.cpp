@@ -68,7 +68,7 @@ CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
     char** data = set.getData();
 
     // For each letter in key hold indices of Strings matching at that position 
-    list<ulong> matchingStrings[stringLength];
+    vector<ulong> matchingStrings[stringLength];
 
     // For each String hold the number of letters which match with current key
     ulong matchingLetters[numStrings] = {0};
@@ -109,12 +109,12 @@ CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
 }
 
 // Pair of matchingStrings array index and pointer to corresponding matchingStrings array element
-typedef pair<ulong, list<ulong>*> myPair;
+typedef pair<ulong, vector<ulong>*> myPair;
 
 bool CommonStringFinder::changeKey(char* key,
                                    StringSet &set,
                                    ulong currentStrIndex,
-                                   list<ulong>* matchingStrings,
+                                   vector<ulong>* matchingStrings,
                                    ulong* matchingLetters,
                                    vector<ulong> &changeablePositions) {
     list<myPair> myPairList;
@@ -134,7 +134,7 @@ bool CommonStringFinder::changeKey(char* key,
                                             return lhs.second->size() < rhs.second->size();
                                         });
         myPair &pair = *pairIterator;
-        list<ulong> &pList = *pair.second;
+        vector<ulong> &pList = *pair.second;
         ulong &keyIndex = pair.first;
 
         // Is it safe to change key letter at this keyIndex
@@ -173,7 +173,10 @@ bool CommonStringFinder::changeKey(char* key,
             matchingStrings[keyIndexToChange].push_back(str);
         } else if (data[str][keyIndexToChange] == oldKeyLetter) {
             matchingLetters[str] -= 1;
-            matchingStrings[keyIndexToChange].remove(str);
+            matchingStrings[keyIndexToChange].erase(
+                    remove(matchingStrings[keyIndexToChange].begin(), matchingStrings[keyIndexToChange].end(), str),
+                    matchingStrings[keyIndexToChange].end()
+            );
         }
     }
 
@@ -184,7 +187,7 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(StringSet &s
                                                                     const function<void(const char* key,
                                                                                         const StringSet &set,
                                                                                         const ulong* matchingLetters,
-                                                                                        const list<ulong>* matchingStrings,
+                                                                                        const vector<ulong>* matchingStrings,
                                                                                         ulong currentStrIndex,
                                                                                         bool keyChanged)> &peekFunction) {
     ulong stringLength = set.getStringLength();
@@ -194,7 +197,7 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(StringSet &s
     char** data = set.getData();
 
     // For each letter in key hold indices of Strings matching at that position
-    list<ulong> matchingStrings[stringLength];
+    vector<ulong> matchingStrings[stringLength];
 
     // For each String hold the number of letters which match with current key
     ulong matchingLetters[numStrings] = {0};
