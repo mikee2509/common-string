@@ -25,6 +25,7 @@ public:
     struct Result {
         ResultType type;
         std::string value;
+        Result() : type(SOLUTION_NOT_FOUND) {}
         explicit Result(ResultType type) : type(type) {}
         Result(ResultType type, std::string value) : type(type), value(std::move(value)) {}
         friend std::ostream &operator<<(std::ostream &os, const Result &result);

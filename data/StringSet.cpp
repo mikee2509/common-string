@@ -43,3 +43,13 @@ ulong StringSet::getStringLength() const {
 ulong StringSet::getNumStrings() const {
     return numStrings;
 }
+
+std::ostream &operator<<(std::ostream &os, const StringSet &set) {
+    for (ulong i = 0; i < set.numStrings; ++i) {
+        for (ulong j = 0; j < set.stringLength; ++j) {
+            os << set.data[i][j];
+        }
+        os << std::endl;
+    }
+    return os;
+}

@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <vector>
+#include <ostream>
 #include "../DataTypes.h"
 
 class StringSet {
@@ -21,7 +22,7 @@ public:
     char** getData() const;
     ulong getStringLength() const;
     ulong getNumStrings() const;
-
+    friend std::ostream &operator<<(std::ostream &os, const StringSet &set);
 };
 
 #endif //AAL_STRINGSET_H
