@@ -16,6 +16,7 @@ CommonStringFinder::Result CommonStringFinder::bruteForce(StringSet &set) {
 
     char** data = set.getData();
 
+    ulong keyChanges = 0;
     double numCombinations = pow(2, stringLength);
     //for each key
     for (long long combination = 0; combination < numCombinations; ++combination) {
@@ -40,12 +41,13 @@ CommonStringFinder::Result CommonStringFinder::bruteForce(StringSet &set) {
             }
         }
         if (!nextKey) {
-            return Result(SOLUTION, string(key, stringLength));
+            return Result(SOLUTION, keyChanges, string(key, stringLength));
         }
         incrementKey(key, stringLength);
+        ++keyChanges;
     }
 
-    return Result(NO_SOLUTION);
+    return Result(NO_SOLUTION, keyChanges);
 }
 
 void CommonStringFinder::incrementKey(char* key, const ulong &length) {
@@ -80,6 +82,7 @@ CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
         }
     }
 
+    ulong keyChanges = 0;
     for (ulong str = 0; str < numStrings; ++str) {
         vector<ulong> changeablePositions;
         for (ulong letter = 0; letter < stringLength; ++letter) {
@@ -92,16 +95,17 @@ CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
             }
         }
         if (changeablePositions.empty()) {
-            return Result(NO_SOLUTION);
+            return Result(NO_SOLUTION, keyChanges);
         }
         if (matchingLetters[str] == 0) {
             if (!changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions)) {
-                return Result(SOLUTION_NOT_FOUND);
+                return Result(SOLUTION_NOT_FOUND, keyChanges);
             }
+            ++keyChanges;
         }
     }
 
-    return Result(SOLUTION, string(key, stringLength));
+    return Result(SOLUTION, keyChanges, string(key, stringLength));
 }
 
 // Pair of matchingStrings array index and pointer to corresponding matchingStrings array element
@@ -204,6 +208,7 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(StringSet &s
         }
     }
 
+    ulong keyChanges = 0;
     for (ulong str = 0; str < numStrings; ++str) {
         vector<ulong> changeablePositions;
         for (ulong letter = 0; letter < stringLength; ++letter) {
@@ -219,25 +224,30 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(StringSet &s
             peekFunction(key, set, matchingLetters, matchingStrings, str, false);
         }
         if (changeablePositions.empty()) {
-            return Result(NO_SOLUTION);
+            return Result(NO_SOLUTION, keyChanges);
         }
         if (matchingLetters[str] == 0) {
             if (!changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions)) {
-                return Result(SOLUTION_NOT_FOUND);
+                return Result(SOLUTION_NOT_FOUND, keyChanges);
             }
             if (peekFunction != nullptr) {
                 peekFunction(key, set, matchingLetters, matchingStrings, str, true);
             }
+            ++keyChanges;
         }
     }
 
-    return Result(SOLUTION, string(key, stringLength));
+    return Result(SOLUTION, keyChanges, string(key, stringLength));
 }
 
 ostream &operator<<(ostream &os, const CommonStringFinder::Result &result) {
     switch (result.type) {
         case CommonStringFinder::SOLUTION:
-            os << result.value;
+            if (result.value.length() > 20) {
+                os << result.value.substr(0, 20) + "(...)";
+            } else {
+                os << result.value;
+            }
             break;
         case CommonStringFinder::NO_SOLUTION:
             os << "Solution doesn't exist";

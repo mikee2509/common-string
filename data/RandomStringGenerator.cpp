@@ -5,8 +5,8 @@
 #include "RandomStringGenerator.h"
 
 RandomStringGenerator::RandomStringGenerator() : uni(0, 2) {
-//    std::random_device rd;
-    rng.seed(1);
+    std::random_device rd;
+    rng.seed(rd());
     alphabet[0] = '0';
     alphabet[1] = '1';
     alphabet[2] = '*';

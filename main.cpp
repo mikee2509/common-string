@@ -101,6 +101,7 @@ int t1Mode(vector<string> &args) {
     }
 
     solveOnce(set, withInteractiveMode);
+    return 0;
 }
 
 int t2Mode(vector<string> &args) {
@@ -126,7 +127,7 @@ int t2Mode(vector<string> &args) {
     ulong numStrings = 0;
 
     try {
-        for (int i = goi; i < goi+3; i += 2) {
+        for (int i = goi; i < goi + 3; i += 2) {
             if (args[i] == "-n" && !nSet) {
                 stringLength = stoul(args[i + 1]);
                 nSet = true;
@@ -138,6 +139,7 @@ int t2Mode(vector<string> &args) {
             }
         }
     } catch (const logic_error &e) {
+        cout << e.what() << endl;
         return kError;
     }
 
@@ -145,6 +147,7 @@ int t2Mode(vector<string> &args) {
     StringSet set = rsg.generateStringSet(stringLength, numStrings);
 
     solveOnce(set, withInteractiveMode);
+    return 0;
 }
 
 void solveOnce(StringSet &set, bool withInteractiveMode) {
@@ -188,5 +191,87 @@ void peekFunction(const char* key, const StringSet &set, const ulong* matchingLe
 }
 
 int t3Mode(vector<string> &args) {
+    if (args.size() != 13) {
+        return kError;
+    }
 
+    bool nSet, mSet, kSet, stepNSet, stepMSet, rSet;
+    nSet = mSet = kSet = stepNSet = stepMSet = rSet = false;
+
+    ulong initialStrLen, initialNumStrings, numIncrements, stepStrLen, stepNumStrings, numRepeats;
+    initialStrLen = initialNumStrings = numIncrements = stepStrLen = stepNumStrings = numRepeats = 0;
+
+    try {
+        for (int i = 1; i < 13; i += 2) {
+            if (args[i] == "-n" && !nSet) {
+                initialStrLen = stoul(args[i + 1]);
+                nSet = true;
+            } else if (args[i] == "-m" && !mSet) {
+                initialNumStrings = stoul(args[i + 1]);
+                mSet = true;
+            } else if (args[i] == "-k" && !kSet) {
+                numIncrements = stoul(args[i + 1]);
+                kSet = true;
+            } else if (args[i] == "-step_n" && !stepNSet) {
+                stepStrLen = stoul(args[i + 1]);
+                stepNSet = true;
+            } else if (args[i] == "-step_m" && !stepMSet) {
+                stepNumStrings = stoul(args[i + 1]);
+                stepMSet = true;
+            } else if (args[i] == "-r" && !rSet) {
+                numRepeats = stoul(args[i + 1]);
+                rSet = true;
+            } else {
+                return kError;
+            }
+        }
+    } catch (const logic_error &e) {
+        cout << e.what() << endl;
+        return kError;
+    }
+
+    RandomStringGenerator rsg;
+    CommonStringFinder csf;
+    ExecutionTimeClock clock;
+    ulong stringLength = initialStrLen;
+    ulong numStrings = initialNumStrings;
+
+    for (int i = 0; i < numIncrements; ++i) {
+        long long totalTimeBrute = 0;
+        long long totalTimeHeuristic = 0;
+        ulong numBruteSuccesses = 0;
+        ulong numHeuristicSuccesses = 0;
+        ulong sumBKeyChanges = 0;
+        ulong sumHKeyChanges = 0;
+        CommonStringFinder::Result bruteResult, heuristicResult;
+
+        for (int j = 0; j < numRepeats; ++j) {
+            StringSet set = rsg.generateStringSet(stringLength, numStrings);
+            totalTimeBrute += clock.measure([&] { bruteResult = csf.bruteForce(set); });
+            totalTimeHeuristic += clock.measure([&] { heuristicResult = csf.heuristic(set); });
+            if (bruteResult.type == CommonStringFinder::SOLUTION) ++numBruteSuccesses;
+            if (heuristicResult.type == CommonStringFinder::SOLUTION) ++numHeuristicSuccesses;
+            sumBKeyChanges += bruteResult.keyChanges;
+            sumHKeyChanges += heuristicResult.keyChanges;
+//            reverse(heuristicResult.value.begin(), heuristicResult.value.end());
+//            sumBKeyChanges += bitset<64>(heuristicResult.value).to_ulong();
+        }
+        double sr = (double) numHeuristicSuccesses/numBruteSuccesses;
+        cout << "String length: " << stringLength << "\t Number of strings: " << numStrings
+             << "\t Number of runs: " << numRepeats << endl;
+        cout << "Brute-force: " << setw(25) << left << bruteResult << "\t"
+             << setw(23) << left << to_string(totalTimeBrute) + " microseconds "
+             << "Average key changes: " << (double)sumBKeyChanges/numRepeats << "\t"
+             << "Number of solutions: " << numBruteSuccesses << endl;
+        cout << "Heuristic:   " << setw(25) << left << heuristicResult << "\t"
+             << setw(23) << left << to_string(totalTimeHeuristic) + " microseconds "
+             << "Average key changes: " << (double)sumHKeyChanges/numRepeats << "\t"
+             << "Number of successes: " << numHeuristicSuccesses << "\t"
+             << "Success rate: " << sr << endl;
+        cout << endl;
+        stringLength += stepStrLen;
+        numStrings += stepNumStrings;
+    }
+
+    return 0;
 }

@@ -24,10 +24,12 @@ public:
 
     struct Result {
         ResultType type;
+        ulong keyChanges = 0;
         std::string value;
         Result() : type(SOLUTION_NOT_FOUND) {}
-        explicit Result(ResultType type) : type(type) {}
-        Result(ResultType type, std::string value) : type(type), value(std::move(value)) {}
+        Result(ResultType type, ulong keyChanges) : type(type), keyChanges(keyChanges) {}
+        Result(ResultType type, ulong keyChanges, std::string value)
+                : type(type), keyChanges(keyChanges), value(std::move(value)) {}
         friend std::ostream &operator<<(std::ostream &os, const Result &result);
     };
 
