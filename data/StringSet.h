@@ -7,19 +7,20 @@
 
 #include <cmath>
 #include <vector>
+#include "../DataTypes.h"
 
 class StringSet {
     char* buffer = nullptr;
     char** data = nullptr;
-    int stringLength;
-    int numStrings;
+    ulong stringLength;
+    ulong numStrings;
 
 public:
-    StringSet(int stringLength, int numStrings);
+    StringSet(ulong stringLength, ulong numStrings);
     virtual ~StringSet();
     char** getData() const;
-    int getStringLength() const;
-    int getNumStrings() const;
+    ulong getStringLength() const;
+    ulong getNumStrings() const;
 
 };
 

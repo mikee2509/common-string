@@ -6,7 +6,8 @@
 #define AAL_RANDOMSTRINGGENERATOR_H
 
 #include <random>
-#include "../data/StringSet.h"
+#include "StringSet.h"
+#include "../DataTypes.h"
 
 class RandomStringGenerator {
     std::uniform_int_distribution<int> uni;
@@ -15,7 +16,7 @@ class RandomStringGenerator {
 
 public:
     RandomStringGenerator();
-    StringSet generateStringSet(int stringLength, int numStrings);
+    StringSet generateStringSet(ulong stringLength, ulong numStrings);
 
 };
 

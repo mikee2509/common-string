@@ -4,19 +4,19 @@
 
 #include "StringSet.h"
 
-StringSet::StringSet(int stringLength, int numStrings)
+StringSet::StringSet(ulong stringLength, ulong numStrings)
         : stringLength(stringLength), numStrings(numStrings) {
 
     // One contiguous memory block
     buffer = new char[numStrings * stringLength];
     data = new char* [numStrings];
-    for (int i = 0; i < numStrings; ++i) {
+    for (ulong i = 0; i < numStrings; ++i) {
         data[i] = &buffer[i*stringLength];
     }
 
     // Many small chunks of memory
 //    data = new char* [numStrings];
-//    for (int i = 0; i < numStrings; ++i) {
+//    for (ulong i = 0; i < numStrings; ++i) {
 //        data[i] = new char[stringLength];
 //    }
 
@@ -26,7 +26,7 @@ StringSet::~StringSet() {
     delete[] buffer;
     delete[] data;
 
-//    for (int i = 0; i < numStrings; ++i) {
+//    for (ulong i = 0; i < numStrings; ++i) {
 //        delete[] data[i];
 //    }
 //    delete[] data;
@@ -36,10 +36,10 @@ char** StringSet::getData() const {
     return data;
 }
 
-int StringSet::getStringLength() const {
+ulong StringSet::getStringLength() const {
     return stringLength;
 }
 
-int StringSet::getNumStrings() const {
+ulong StringSet::getNumStrings() const {
     return numStrings;
 }
