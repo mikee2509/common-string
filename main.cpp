@@ -253,22 +253,20 @@ int t3Mode(vector<string> &args) {
             if (heuristicResult.type == CommonStringFinder::SOLUTION) ++numHeuristicSuccesses;
             sumBKeyChanges += bruteResult.keyChanges;
             sumHKeyChanges += heuristicResult.keyChanges;
-//            reverse(heuristicResult.value.begin(), heuristicResult.value.end());
-//            sumBKeyChanges += bitset<64>(heuristicResult.value).to_ulong();
         }
-        double sr = (double) numHeuristicSuccesses/numBruteSuccesses;
         cout << "String length: " << stringLength << "\t Number of strings: " << numStrings
              << "\t Number of runs: " << numRepeats << endl;
-        cout << "Brute-force: " << setw(25) << left << bruteResult << "\t"
-             << setw(23) << left << to_string(totalTimeBrute) + " microseconds "
-             << "Average key changes: " << (double)sumBKeyChanges/numRepeats << "\t"
-             << "Number of solutions: " << numBruteSuccesses << endl;
-        cout << "Heuristic:   " << setw(25) << left << heuristicResult << "\t"
-             << setw(23) << left << to_string(totalTimeHeuristic) + " microseconds "
-             << "Average key changes: " << (double)sumHKeyChanges/numRepeats << "\t"
-             << "Number of successes: " << numHeuristicSuccesses << "\t"
-             << "Success rate: " << sr << endl;
+        cout << "Brute-force: " << "\t"
+             << setw(15) << left << to_string(totalTimeBrute) + " µs "
+             << "Average key changes: " << fixed << setprecision(3) << (double)sumBKeyChanges/numRepeats << "\t"
+             << "Number of solutions: " << setw(8) << left << numBruteSuccesses << endl;
+        cout << "Heuristic:   " << "\t"
+             << setw(15) << left << to_string(totalTimeHeuristic) + " µs "
+             << "Average key changes: " << fixed << setprecision(3) << (double)sumHKeyChanges/numRepeats << "\t"
+             << "Number of successes: " << setw(8) << left << numHeuristicSuccesses << "\t"
+             << "Success rate: " << (double) numHeuristicSuccesses/numBruteSuccesses << endl;
         cout << endl;
+        
         stringLength += stepStrLen;
         numStrings += stepNumStrings;
     }
