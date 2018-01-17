@@ -8,17 +8,20 @@
 using namespace std;
 
 void static printUsage(const char* name);
+StringSet readDataFromStdin();
 int t1Mode(vector<string> &args);
 int t2Mode(vector<string> &args);
-void solveOnce(StringSet &set, bool withInteractiveMode);
+void solveOnce(const StringSet &set, bool withInteractiveMode);
 void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
                   const vector<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged);
 int t3Mode(vector<string> &args);
+int t4Mode(vector<string> &args);
 
 static const char* const kName = "AAL";
 static const char* const kFileError = "File error";
 static const int kError = 1;
 
+int t4Mode(vector<string> &args);
 int main(int argc, char* argv[]) {
     vector<string> args(argv + 1, argv + argc + !argc);
     int ret;
@@ -33,6 +36,8 @@ int main(int argc, char* argv[]) {
         ret = t2Mode(args);
     } else if (args[0] == "-t3") {
         ret = t3Mode(args);
+    } else if (args[0] == "-t4") {
+        ret = t4Mode(args);
     } else {
         ret = kError;
     }
@@ -47,8 +52,8 @@ void static printUsage(const char* name) {
     cerr << "Usage:\n"
          << name << " -t1 [-i]                       \tRead data from stdin and print results to stdout\n"
          << name << " -t2 [-i] <gen_options>         \tGenerate random data and print results to stdout\n"
-         << name
-         << " -t3 <gen_options> <test_params>\tGenerate random data, measure execution time and print results to stdout\n"
+         << name << " -t3 <gen_options> <test_params>\tGenerate random data, measure execution time and print results to stdout\n"
+         << name << " -t4 -r NUM_RUNS                \tRead data from stdin, measure execution time and print results to stdout\n"
          << "Optional parameter:\n"
          << "\t-i Run heuristic in interactive mode\n"
          << "Generator options:\n"
@@ -74,11 +79,22 @@ int t1Mode(vector<string> &args) {
         return kError;
     }
 
+    try {
+        const StringSet &set = readDataFromStdin();
+        solveOnce(set, withInteractiveMode);
+    } catch (runtime_error &e) {
+        cout << e.what() << endl;
+        return kError;
+    }
+
+    return 0;
+}
+
+StringSet readDataFromStdin() {
     string firstLine;
     getline(cin, firstLine);
     if (!regex_match(firstLine, regex("^[10*]+$"))) {
-        cout << kFileError << endl;
-        return kError;
+        throw runtime_error(kFileError);
     }
     ulong stringLength = firstLine.length();
     regex format("^[10*]{" + to_string(stringLength) + "}$");
@@ -86,8 +102,7 @@ int t1Mode(vector<string> &args) {
 
     for (string line; getline(cin, line);) {
         if (!regex_match(line, format)) {
-            cout << kFileError << endl;
-            return kError;
+            throw runtime_error(kFileError);
         }
         readData.push_back(line);
     }
@@ -98,9 +113,7 @@ int t1Mode(vector<string> &args) {
     for (ulong str = 0; str < numStrings; ++str) {
         readData[str].copy(data[str], stringLength);
     }
-
-    solveOnce(set, withInteractiveMode);
-    return 0;
+    return set;
 }
 
 int t2Mode(vector<string> &args) {
@@ -149,20 +162,21 @@ int t2Mode(vector<string> &args) {
     return 0;
 }
 
-void solveOnce(StringSet &set, bool withInteractiveMode) {
+void solveOnce(const StringSet &set, bool withInteractiveMode) {
     cout << "Input:" << endl;
     cout << set << endl << endl;
 
     CommonStringFinder csf;
-    CommonStringFinder::Result result;
+    CommonStringFinder::Result hResult, bResult;
     if (withInteractiveMode) {
         cout << "HEURISTIC:" << endl;
-        result = csf.heuristicInteractive(set, peekFunction);
+        hResult = csf.heuristicInteractive(set, peekFunction);
     } else {
-        result = csf.heuristic(set);
+        hResult = csf.heuristic(set);
     }
-    cout << "Heuristic solution:   " << result << endl;
-    cout << "Brute-force solution: " << csf.bruteForce(set) << endl;
+    bResult = csf.bruteForce(set);
+    cout << "Heuristic solution:   " << hResult << "   Number of key changes: " << hResult.keyChanges << endl;
+    cout << "Brute-force solution: " << bResult << "   Number of key changes: " << bResult.keyChanges << endl;
 }
 
 void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
@@ -265,10 +279,68 @@ int t3Mode(vector<string> &args) {
              << "Number of successes: " << setw(8) << left << numHeuristicSuccesses << "\t"
              << "Success rate: " << (double) numHeuristicSuccesses/numBruteSuccesses << endl;
         cout << endl;
-        
+
         stringLength += stepStrLen;
         numStrings += stepNumStrings;
     }
+
+    return 0;
+}
+
+int t4Mode(vector<string> &args) {
+    if (args.size() != 3 || args[1] != "-r") {
+        return kError;
+    }
+    ulong numRuns;
+    try {
+        numRuns = stoul(args[2]);
+    } catch (const logic_error &e) {
+        cout << e.what() << endl;
+        return kError;
+    }
+
+    CommonStringFinder csf;
+    ExecutionTimeClock clock;
+    const StringSet &set = readDataFromStdin();
+    long long totalTimeBrute = 0;
+    long long totalTimeHeuristic = 0;
+    CommonStringFinder::Result bResult, hResult;
+
+    const int barWidth = 70;
+    ulong update;
+    if (numRuns > barWidth) {
+        update = numRuns / barWidth;
+    } else {
+        update = 1;
+    }
+    for (ulong i = 0; i < numRuns; ++i) {
+        if (i % update == 0) {
+            float progress = (float) (i+1) / numRuns;
+            cout << "[";
+            auto pos = static_cast<int>(barWidth * progress);
+            for (int j = 0; j < barWidth; ++j) {
+                if (j < pos) cout << "=";
+                else cout << " ";
+            }
+            cout << "] " << int(progress * 100.0) << " %\r";
+            cout.flush();
+        }
+
+        totalTimeBrute += clock.measure([&] { bResult = csf.bruteForce(set); });
+        totalTimeHeuristic += clock.measure([&] { hResult = csf.heuristic(set); });
+    }
+    for (int i = 0; i < barWidth+8; ++i) {
+        cout << " ";
+    }
+
+    cout << "\rString length: " << set.getStringLength() << "   Number of strings: " << set.getNumStrings()
+         << "   Number of runs: " << numRuns << endl;
+    cout << "Brute-force: " << bResult << "\t"
+         << setw(15) << left << to_string(totalTimeBrute) + " µs "
+         << "Key changes: " << bResult.keyChanges << endl;
+    cout << "Heuristic:   " << hResult << "\t"
+         << setw(15) << left << to_string(totalTimeHeuristic) + " µs "
+         << "Key changes: " << hResult.keyChanges << "\t" << endl;
 
     return 0;
 }

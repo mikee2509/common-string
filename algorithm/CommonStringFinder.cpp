@@ -6,7 +6,7 @@
 
 using namespace std;
 
-CommonStringFinder::Result CommonStringFinder::bruteForce(StringSet &set) {
+CommonStringFinder::Result CommonStringFinder::bruteForce(const StringSet &set) {
     ulong stringLength = set.getStringLength();
     ulong numStrings = set.getNumStrings();
     char** data = set.getData();
@@ -56,7 +56,7 @@ void CommonStringFinder::incrementKey(char* key, const ulong &length) {
     }
 }
 
-CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
+CommonStringFinder::Result CommonStringFinder::heuristic(const StringSet &set) {
     ulong stringLength = set.getStringLength();
     ulong numStrings = set.getNumStrings();
 
@@ -108,7 +108,7 @@ CommonStringFinder::Result CommonStringFinder::heuristic(StringSet &set) {
 typedef pair<ulong, vector<ulong>*> myPair;
 
 bool CommonStringFinder::changeKey(char* key,
-                                   StringSet &set,
+                                   const StringSet &set,
                                    ulong currentStrIndex,
                                    vector<ulong>* matchingStrings,
                                    ulong* matchingLetters,
@@ -179,7 +179,7 @@ bool CommonStringFinder::changeKey(char* key,
     return true;
 }
 
-CommonStringFinder::Result CommonStringFinder::heuristicInteractive(StringSet &set,
+CommonStringFinder::Result CommonStringFinder::heuristicInteractive(const StringSet &set,
                                                                     const function<void(const char* key,
                                                                                         const StringSet &set,
                                                                                         const ulong* matchingLetters,
