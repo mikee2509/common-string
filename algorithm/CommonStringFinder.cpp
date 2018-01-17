@@ -9,38 +9,18 @@ using namespace std;
 CommonStringFinder::Result CommonStringFinder::bruteForce(StringSet &set) {
     ulong stringLength = set.getStringLength();
     ulong numStrings = set.getNumStrings();
+    char** data = set.getData();
+
     char key[stringLength];
     for (ulong i = 0; i < stringLength; ++i) {
         key[i] = '0';
     }
-
-    char** data = set.getData();
-
     ulong keyChanges = 0;
     double numCombinations = pow(2, stringLength);
-    //for each key
+
     for (long long combination = 0; combination < numCombinations; ++combination) {
-        //should next key be checked
-        bool nextKey = false;
-        //for each string in set
-        for (ulong str = 0; str < numStrings; ++str) {
-            //does current key match string?
-            bool match = false;
-            //for each letter
-            for (ulong letter = 0; letter < stringLength; ++letter) {
-                //check if at least one of them matches
-                if (data[str][letter] == key[letter]) {
-                    match = true;
-                    break;
-                }
-            }
-            //if not a single letter match check with next key
-            if (!match) {
-                nextKey = true;
-                break;
-            }
-        }
-        if (!nextKey) {
+        bool keyMatches = checkKey(stringLength, numStrings, key, data);
+        if (keyMatches) {
             return Result(SOLUTION, keyChanges, string(key, stringLength));
         }
         incrementKey(key, stringLength);
@@ -48,6 +28,22 @@ CommonStringFinder::Result CommonStringFinder::bruteForce(StringSet &set) {
     }
 
     return Result(NO_SOLUTION, keyChanges);
+}
+
+bool CommonStringFinder::checkKey(ulong &stringLength, ulong &numStrings, const char* key, char* const* data) {
+    for (ulong str = 0; str < numStrings; ++str) {
+        bool match = false;
+        for (ulong letter = 0; letter < stringLength; ++letter) {
+            if (data[str][letter] == key[letter]) {
+                match = true;
+                break;
+            }
+        }
+        if (!match) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void CommonStringFinder::incrementKey(char* key, const ulong &length) {
@@ -259,4 +255,13 @@ ostream &operator<<(ostream &os, const CommonStringFinder::Result &result) {
             os << "Solution not found";
     }
     return os;
+}
+bool CommonStringFinder::Result::solutionFound() const {
+    return type == SOLUTION;
+}
+
+bool CommonStringFinder::doesKeyMatch(std::string &key, StringSet &set) {
+    ulong stringLength = set.getStringLength();
+    ulong numStrings = set.getNumStrings();
+    return checkKey(stringLength, numStrings, key.c_str(), set.getData());
 }

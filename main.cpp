@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <regex>
-#include <fstream>
 #include "data/RandomStringGenerator.h"
 #include "algorithm/CommonStringFinder.h"
 #include "algorithm/ExecutionTimeClock.h"
@@ -249,8 +248,8 @@ int t3Mode(vector<string> &args) {
             StringSet set = rsg.generateStringSet(stringLength, numStrings);
             totalTimeBrute += clock.measure([&] { bruteResult = csf.bruteForce(set); });
             totalTimeHeuristic += clock.measure([&] { heuristicResult = csf.heuristic(set); });
-            if (bruteResult.type == CommonStringFinder::SOLUTION) ++numBruteSuccesses;
-            if (heuristicResult.type == CommonStringFinder::SOLUTION) ++numHeuristicSuccesses;
+            if (bruteResult.solutionFound()) ++numBruteSuccesses;
+            if (heuristicResult.solutionFound()) ++numHeuristicSuccesses;
             sumBKeyChanges += bruteResult.keyChanges;
             sumHKeyChanges += heuristicResult.keyChanges;
         }

@@ -17,6 +17,7 @@ class StringSet {
     ulong numStrings;
 
 public:
+    StringSet() = default;
     StringSet(ulong stringLength, ulong numStrings);
     virtual ~StringSet();
     char** getData() const;

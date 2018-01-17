@@ -14,12 +14,14 @@ RandomStringGenerator::RandomStringGenerator() : uni(0, 2) {
 
 StringSet RandomStringGenerator::generateStringSet(ulong stringLength, ulong numStrings) {
     StringSet set(stringLength, numStrings);
+    fillStringSet(set);
+    return set;
+}
+void RandomStringGenerator::fillStringSet(StringSet &set) {
     char** data = set.getData();
-    for (ulong str = 0; str < numStrings; ++str) {
-        for (ulong letter = 0; letter < stringLength; ++letter) {
+    for (ulong str = 0; str < set.getNumStrings(); ++str) {
+        for (ulong letter = 0; letter < set.getStringLength(); ++letter) {
             data[str][letter] = alphabet[uni(rng)];
         }
     }
-
-    return set;
 }
