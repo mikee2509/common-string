@@ -31,8 +31,10 @@ public:
         Result(ResultType type, ulong keyChanges, std::string value)
                 : type(type), keyChanges(keyChanges), value(std::move(value)) {}
         friend std::ostream &operator<<(std::ostream &os, const Result &result);
+        bool solutionFound() const;
     };
 
+    bool doesKeyMatch(std::string &key, StringSet &set);
     Result bruteForce(StringSet &set);
     Result heuristic(StringSet &set);
     Result heuristicInteractive(StringSet &set,
@@ -44,6 +46,7 @@ public:
                                                          bool keyChanged)> &peekFunction = nullptr);
 
 private:
+    bool checkKey(ulong &stringLength, ulong &numStrings, const char* key, char* const* data);
     void incrementKey(char* key, const ulong &length);
     bool changeKey(char* key,
                    StringSet &set,

@@ -17,6 +17,7 @@ class RandomStringGenerator {
 public:
     RandomStringGenerator();
     StringSet generateStringSet(ulong stringLength, ulong numStrings);
+    void fillStringSet(StringSet& set);
 
 };
 
