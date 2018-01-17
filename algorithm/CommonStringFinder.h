@@ -35,9 +35,9 @@ public:
     };
 
     bool doesKeyMatch(std::string &key, StringSet &set);
-    Result bruteForce(StringSet &set);
-    Result heuristic(StringSet &set);
-    Result heuristicInteractive(StringSet &set,
+    Result bruteForce(const StringSet &set);
+    Result heuristic(const StringSet &set);
+    Result heuristicInteractive(const StringSet &set,
                                 const std::function<void(const char* key,
                                                          const StringSet &set,
                                                          const ulong* matchingLetters,
@@ -45,11 +45,11 @@ public:
                                                          ulong currentStrIndex,
                                                          bool keyChanged)> &peekFunction = nullptr);
 
-private:
+protected:
     bool checkKey(ulong &stringLength, ulong &numStrings, const char* key, char* const* data);
     void incrementKey(char* key, const ulong &length);
     bool changeKey(char* key,
-                   StringSet &set,
+                   const StringSet &set,
                    ulong currentStrIndex,
                    std::list<ulong>* matchingStrings,
                    ulong* matchingLetters,
