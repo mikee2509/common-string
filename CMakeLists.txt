@@ -50,4 +50,5 @@ set(SOURCE_FILES
 set(TEST_FILES tests/CommonStringFinderTest.cpp)
 add_executable(AAL main.cpp ${SOURCE_FILES})
 add_executable(AALtests ${SOURCE_FILES} ${TEST_FILES})
+add_executable(AALgenerator data/generator_main.cpp ${SOURCE_FILES})
 target_link_libraries(AALtests gtest gtest_main)
