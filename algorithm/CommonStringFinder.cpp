@@ -15,12 +15,15 @@ CommonStringFinder::Result CommonStringFinder::bruteForce(const StringSet &set) 
     for (ulong i = 0; i < stringLength; ++i) {
         key[i] = '0';
     }
+
+    // Count the number of key increments needed in order to find a solution
     ulong keyChanges = 0;
-    double numCombinations = pow(2, stringLength);
+
+    // Total number of key combinations
+    long long numCombinations = (long long) pow(2, stringLength);
 
     for (long long combination = 0; combination < numCombinations; ++combination) {
-        bool keyMatches = checkKey(stringLength, numStrings, key, data);
-        if (keyMatches) {
+        if (checkKeyAgainstAllStrings(stringLength, numStrings, key, data)) {
             return Result(SOLUTION, keyChanges, string(key, stringLength));
         }
         incrementKey(key, stringLength);
@@ -30,7 +33,9 @@ CommonStringFinder::Result CommonStringFinder::bruteForce(const StringSet &set) 
     return Result(NO_SOLUTION, keyChanges);
 }
 
-bool CommonStringFinder::checkKey(ulong &stringLength, ulong &numStrings, const char* key, char* const* data) {
+// Returns true if key matches all of the strings
+bool CommonStringFinder::checkKeyAgainstAllStrings(ulong &stringLength, ulong &numStrings,
+                                                   const char* key, char* const* data) {
     for (ulong str = 0; str < numStrings; ++str) {
         bool match = false;
         for (ulong letter = 0; letter < stringLength; ++letter) {
@@ -57,8 +62,8 @@ void CommonStringFinder::incrementKey(char* key, const ulong &length) {
 }
 
 CommonStringFinder::Result CommonStringFinder::heuristic(const StringSet &set) {
-    ulong stringLength = set.getStringLength();
-    ulong numStrings = set.getNumStrings();
+    const ulong &stringLength = set.getStringLength();
+    const ulong &numStrings = set.getNumStrings();
 
     char key[stringLength];
     char** data = set.getData();
@@ -69,6 +74,12 @@ CommonStringFinder::Result CommonStringFinder::heuristic(const StringSet &set) {
     // For each String hold the number of letters which match with current key
     ulong matchingLetters[numStrings] = {0};
 
+    // Positions in key which can be changed by key change procedure
+    vector<ulong> changeablePositions(stringLength);
+
+    // Count the number of key changes needed in order to find a solution
+    ulong keyChanges = 0;
+
     // Initialize key to first string with *s replaced by 0s
     for (ulong i = 0; i < stringLength; ++i) {
         if (data[0][i] == '*') {
@@ -78,22 +89,23 @@ CommonStringFinder::Result CommonStringFinder::heuristic(const StringSet &set) {
         }
     }
 
-    ulong keyChanges = 0;
     for (ulong str = 0; str < numStrings; ++str) {
-        vector<ulong> changeablePositions;
         for (ulong letter = 0; letter < stringLength; ++letter) {
             if (data[str][letter] == key[letter]) {
                 matchingLetters[str] += 1;
                 matchingStrings[letter].push_back(str);
             }
-            if (data[str][letter] != '*') {
-                changeablePositions.push_back(letter);
-            }
-        }
-        if (changeablePositions.empty()) {
-            return Result(NO_SOLUTION, keyChanges);
         }
         if (matchingLetters[str] == 0) {
+            changeablePositions.clear();
+            for (ulong letter = 0; letter < stringLength; ++letter) {
+                if (data[str][letter] != '*') {
+                    changeablePositions.push_back(letter);
+                }
+            }
+            if (changeablePositions.empty()) {
+                return Result(NO_SOLUTION, keyChanges);
+            }
             if (!changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions)) {
                 return Result(SOLUTION_NOT_FOUND, keyChanges);
             }
@@ -112,9 +124,9 @@ bool CommonStringFinder::changeKey(char* key,
                                    ulong currentStrIndex,
                                    vector<ulong>* matchingStrings,
                                    ulong* matchingLetters,
-                                   vector<ulong> &changeablePositions) {
+                                   const vector<ulong> &changeablePositions) {
     list<myPair> myPairList;
-    for (ulong &position : changeablePositions) {
+    for (const ulong &position : changeablePositions) {
         myPairList.emplace_back(position, &matchingStrings[position]);
     }
 
@@ -138,7 +150,7 @@ bool CommonStringFinder::changeKey(char* key,
 
         // For each matchingString
         for (ulong &stringIndex : pList) {
-            // If the number of matching letters is less than two (TODO change to equals 1)
+            // If the number of matching letters is less than two
             if (matchingLetters[stringIndex] < 2) {
                 isSafe = false;
                 break;
@@ -163,6 +175,7 @@ bool CommonStringFinder::changeKey(char* key,
     key[keyIndexToChange] = newKeyLetter;
     char** data = set.getData();
 
+    // Update matchingLetters and matchingStrings arrays to be consistent with the new key
     for (ulong str = 0; str < currentStrIndex + 1; ++str) {
         if (data[str][keyIndexToChange] == newKeyLetter) {
             matchingLetters[str] += 1;
@@ -263,5 +276,5 @@ bool CommonStringFinder::Result::solutionFound() const {
 bool CommonStringFinder::doesKeyMatch(std::string &key, StringSet &set) {
     ulong stringLength = set.getStringLength();
     ulong numStrings = set.getNumStrings();
-    return checkKey(stringLength, numStrings, key.c_str(), set.getData());
+    return checkKeyAgainstAllStrings(stringLength, numStrings, key.c_str(), set.getData());
 }
