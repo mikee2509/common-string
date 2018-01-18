@@ -83,7 +83,7 @@ int t1Mode(vector<string> &args) {
         const StringSet &set = readDataFromStdin();
         solveOnce(set, withInteractiveMode);
     } catch (runtime_error &e) {
-        cout << e.what() << endl;
+        cerr << e.what() << endl;
         return kError;
     }
 
@@ -151,7 +151,7 @@ int t2Mode(vector<string> &args) {
             }
         }
     } catch (const logic_error &e) {
-        cout << e.what() << endl;
+        cerr << e.what() << endl;
         return kError;
     }
 
@@ -239,7 +239,7 @@ int t3Mode(vector<string> &args) {
             }
         }
     } catch (const logic_error &e) {
-        cout << e.what() << endl;
+        cerr << e.what() << endl;
         return kError;
     }
 
@@ -295,7 +295,7 @@ int t4Mode(vector<string> &args) {
     try {
         numRuns = stoul(args[2]);
     } catch (const logic_error &e) {
-        cout << e.what() << endl;
+        cerr << e.what() << endl;
         return kError;
     }
 
