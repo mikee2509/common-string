@@ -58,7 +58,7 @@ TEST_P(HeuristicSuccessRateTest, T2) {
     }
     ulong bruSuccesses = 0;
     ulong heuSuccesses = 0;
-    for (int i = 0; i < numAttempts; ++i) {
+    for (ulong i = 0; i < numAttempts; ++i) {
         auto bruResult = csf.bruteForce(*set);
         if (bruResult.solutionFound()) {
             ++bruSuccesses;

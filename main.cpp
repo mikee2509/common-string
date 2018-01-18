@@ -186,11 +186,11 @@ void peekFunction(const char* key, const StringSet &set, const ulong* matchingLe
     cout << "Key: " << string(key, stringLength) << (keyChanged ? " (new)\n" : "\n");
     cout << setw(3) << left << currentStrIndex << ": " << string(data[currentStrIndex], stringLength) << endl;
     cout << "mL:  ";
-    for (auto i = 0; i < currentStrIndex + 1; ++i) {
+    for (ulong i = 0; i < currentStrIndex + 1; ++i) {
         cout << i << "(" << matchingLetters[i] << ")  ";
     }
     cout << "\nmS:\n";
-    for (auto i = 0; i < stringLength; ++i) {
+    for (ulong i = 0; i < stringLength; ++i) {
         cout << i << "(" << key[i] << "): [";
         for (auto it = matchingStrings[i].begin(); it != matchingStrings[i].end(); ++it) {
             if (it != matchingStrings[i].begin()) {
@@ -249,21 +249,21 @@ int t3Mode(vector<string> &args) {
     ulong stringLength = initialStrLen;
     ulong numStrings = initialNumStrings;
 
-    for (int i = 0; i < numIncrements; ++i) {
+    for (ulong i = 0; i < numIncrements; ++i) {
         long long totalTimeBrute = 0;
         long long totalTimeHeuristic = 0;
-        ulong numBruteSuccesses = 0;
-        ulong numHeuristicSuccesses = 0;
+        ulong numBruSuccesses = 0;
+        ulong numHeuSuccesses = 0;
         ulong sumBKeyChanges = 0;
         ulong sumHKeyChanges = 0;
         CommonStringFinder::Result bruteResult, heuristicResult;
 
-        for (int j = 0; j < numRepeats; ++j) {
+        for (ulong j = 0; j < numRepeats; ++j) {
             StringSet set = rsg.generateStringSet(stringLength, numStrings);
             totalTimeBrute += clock.measure([&] { bruteResult = csf.bruteForce(set); });
             totalTimeHeuristic += clock.measure([&] { heuristicResult = csf.heuristic(set); });
-            if (bruteResult.solutionFound()) ++numBruteSuccesses;
-            if (heuristicResult.solutionFound()) ++numHeuristicSuccesses;
+            if (bruteResult.solutionFound()) ++numBruSuccesses;
+            if (heuristicResult.solutionFound()) ++numHeuSuccesses;
             sumBKeyChanges += bruteResult.keyChanges;
             sumHKeyChanges += heuristicResult.keyChanges;
         }
@@ -272,12 +272,12 @@ int t3Mode(vector<string> &args) {
         cout << "Brute-force: " << "\t"
              << setw(15) << left << to_string(totalTimeBrute) + " µs "
              << "Average key changes: " << fixed << setprecision(3) << (double)sumBKeyChanges/numRepeats << "\t"
-             << "Number of solutions: " << setw(8) << left << numBruteSuccesses << endl;
+             << "Number of solutions: " << setw(8) << left << numBruSuccesses << endl;
         cout << "Heuristic:   " << "\t"
              << setw(15) << left << to_string(totalTimeHeuristic) + " µs "
              << "Average key changes: " << fixed << setprecision(3) << (double)sumHKeyChanges/numRepeats << "\t"
-             << "Number of successes: " << setw(8) << left << numHeuristicSuccesses << "\t"
-             << "Success rate: " << (double) numHeuristicSuccesses/numBruteSuccesses << endl;
+             << "Number of successes: " << setw(8) << left << numHeuSuccesses << "\t"
+             << "Success rate: " << setprecision(1) << (double) numHeuSuccesses*100/numBruSuccesses << " %" << endl;
         cout << endl;
 
         stringLength += stepStrLen;

@@ -1,0 +1,172 @@
+Index: tests/CommonStringFinderTest.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <gtest/gtest-param-test.h>\n#include <gtest/gtest.h>\n#include \"../data/RandomStringGenerator.h\"\n#include \"../algorithm/CommonStringFinder.h\"\n\nusing namespace std;\nusing ::testing::Combine;\nusing ::testing::Range;\n\nclass CommonStringFinderTest : public ::testing::TestWithParam<::testing::tuple<ulong, ulong>> {\nprotected:\n    RandomStringGenerator rsg;\n    StringSet* set = nullptr;\n    CommonStringFinder csf;\n    void SetUp() override {\n        ulong stringLength = ::testing::get<0>(GetParam());\n        ulong numStrings = ::testing::get<1>(GetParam());\n        set = new StringSet(stringLength, numStrings);\n        rsg.fillStringSet(*set);\n    }\n\n    void TearDown() override {\n        delete set;\n        set = nullptr;\n    }\n};\n\n\n// Check if solutions found by heuristic are correct\nclass HeuristicCorrectnessTest : public CommonStringFinderTest {};\n\nTEST_P(HeuristicCorrectnessTest, T1) {\n    auto result = csf.heuristic(*set);\n    if (result.solutionFound()) {\n        EXPECT_TRUE(csf.doesKeyMatch(result.value, *set));\n        return;\n    }\n}\n\nINSTANTIATE_TEST_CASE_P(CSFTests, HeuristicCorrectnessTest,\n                        Combine(Range(ulong(10), ulong(100), ulong(1)),\n                                Range(ulong(10), ulong(1000), ulong(10))));\n\n\n// Check heuristic success rate\nclass HeuristicSuccessRateTest : public CommonStringFinderTest {\nprotected:\n    const ulong numAttempts = 1000;\n    const int w = 4;\n};\n\nstatic map<ulong, double> rates;\n\nTEST_P(HeuristicSuccessRateTest, T2) {\n    auto it = rates.find(set->getStringLength());\n    if (it != rates.end() && (isnan(it->second) || it->second < 90)) {\n        return;\n    }\n    ulong bruSuccesses = 0;\n    ulong heuSuccesses = 0;\n    for (int i = 0; i < numAttempts; ++i) {\n        auto bruResult = csf.bruteForce(*set);\n        if (bruResult.solutionFound()) {\n            ++bruSuccesses;\n            auto heuResult = csf.heuristic(*set);\n            if (heuResult.solutionFound()) {\n                ++heuSuccesses;\n            }\n        }\n        rsg.fillStringSet(*set);\n    }\n    double sr = (double) heuSuccesses * 100 / bruSuccesses;\n    rates[set->getStringLength()] = sr;\n    std::cout << std::endl\n              << \"strLen: \" << set->getStringLength()\n              << \"\\tnumStr: \" << set->getNumStrings()\n              << \"\\t\" << setw(w) << right << heuSuccesses << \"/\" << setw(w) << left << bruSuccesses\n              << \"\\tSR = \" << fixed << right << setw(5) << setprecision(1) << sr << \" %\"\n              << std::endl;\n}\n\nINSTANTIATE_TEST_CASE_P(CSFTests, HeuristicSuccessRateTest,\n                        Combine(Range(ulong(1), ulong(15), ulong(1)),\n                                Range(ulong(1), ulong(100), ulong(1))));\n\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- tests/CommonStringFinderTest.cpp	(revision 0a44e1bab524b6ff6b79de5394256a08dc8c0675)
++++ tests/CommonStringFinderTest.cpp	(date 1516155234000)
+@@ -2,6 +2,7 @@
+ #include <gtest/gtest.h>
+ #include "../data/RandomStringGenerator.h"
+ #include "../algorithm/CommonStringFinder.h"
++#include "../algorithm/ExecutionTimeClock.h"
+ 
+ using namespace std;
+ using ::testing::Combine;
+@@ -84,3 +85,154 @@
+                                 Range(ulong(1), ulong(100), ulong(1))));
+ 
+ 
++
++
++
++
++
++
++
++
++
++static ulong mycount = 0;
++static long long totalSum = 0;
++static long long totalSumCK = 0;
++static long long totalLoop = 0;
++static void increment(long long int sum, long long int sumCK, long long int loop) {
++    totalSum += sum;
++    totalSumCK += sumCK;
++    totalLoop += loop;
++    ++mycount;
++}
++
++class HeuristicTest : public ::testing::TestWithParam<::testing::tuple<ulong, ulong>>, CommonStringFinder {
++protected:
++    struct HResult : public Result {
++        long long sumCKTime;
++        long long loopTime;
++        HResult() {}
++        HResult(ResultType type, ulong keyChanges, const string &value, long long int sumCKTime, long long int loopTime)
++                : Result(type, keyChanges, value), sumCKTime(sumCKTime), loopTime(loopTime) {}
++        HResult(ResultType type, ulong keyChanges, long long int sumCKTime, long long int loopTime) : Result(type,
++                                                                                                             keyChanges),
++                                                                                                      sumCKTime(
++                                                                                                              sumCKTime),
++                                                                                                      loopTime(loopTime) {}
++    };
++
++    ExecutionTimeClock clock;
++    RandomStringGenerator rsg;
++    StringSet* set = nullptr;
++    CommonStringFinder csf;
++    void SetUp() override {
++        ulong stringLength = ::testing::get<0>(GetParam());
++        ulong numStrings = ::testing::get<1>(GetParam());
++        set = new StringSet(stringLength, numStrings);
++        rsg.fillStringSet(*set);
++    }
++    void TearDown() override {
++        delete set;
++        set = nullptr;
++    }
++public:
++    static void TearDownTestCase() {
++        cout << "\n\ntotalSum: " << totalSum << endl;
++        cout << "totalSumCK: " << totalSumCK << endl;
++        cout << "totalLoop: " << totalLoop << endl;
++        cout << "mycount: " << mycount << endl;
++        cout << "(double)totalSum/mycount: " << (double)totalSum/mycount << endl;
++        cout << "(double)totalSumCK/mycount: " << (double)totalSumCK/mycount << endl;
++        cout << "(double)totalLoop/mycount: " << (double)totalLoop/mycount << endl;
++    }
++
++    HResult Hheuristic(StringSet &set);
++};
++
++HeuristicTest::HResult HeuristicTest::Hheuristic(StringSet &set) {
++    ExecutionTimeClock clock1;
++    ExecutionTimeClock clock2;
++
++    long long sumCKTime = 0;
++    long long loopTime = 0;
++    ulong stringLength = set.getStringLength();
++    ulong numStrings = set.getNumStrings();
++
++    char key[stringLength];
++    char** data = set.getData();
++
++    // For each letter in key hold indices of Strings matching at that position
++    vector<ulong> matchingStrings[stringLength];
++
++    for (int j = 0; j < stringLength; ++j) {
++        matchingStrings[j].reserve(numStrings);
++    }
++
++    // For each String hold the number of letters which match with current key
++    ulong matchingLetters[numStrings] = {0};
++
++    // Initialize key to first string with *s replaced by 0s
++    for (ulong i = 0; i < stringLength; ++i) {
++        if (data[0][i] == '*') {
++            key[i] = '0';
++        } else {
++            key[i] = data[0][i];
++        }
++    }
++
++
++
++    ulong keyChanges = 0;
++    for (ulong str = 0; str < numStrings; ++str) {
++        loopTime += clock1.measure([&] {
++            vector<ulong> changeablePositions;
++            for (ulong letter = 0; letter < stringLength; ++letter) {
++                if (data[str][letter] == key[letter]) {
++                    matchingLetters[str] += 1;
++                    matchingStrings[letter].push_back(str);
++                }
++                if (data[str][letter] != '*') {
++                    changeablePositions.push_back(letter);
++                }
++            }
++            if (changeablePositions.empty()) {
++                return HResult(NO_SOLUTION, keyChanges, sumCKTime, loopTime);
++            }
++            if (matchingLetters[str] == 0) {
++                bool b;
++                sumCKTime += clock2.measure([&] {
++                    b = changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions);
++                });
++                if (!b) {
++                    return HResult(SOLUTION_NOT_FOUND, keyChanges, sumCKTime, loopTime);
++                }
++                ++keyChanges;
++            }
++        });
++    }
++
++    return HResult(SOLUTION, keyChanges, string(key, stringLength), sumCKTime, loopTime);
++}
++
++TEST_P(HeuristicTest, T3) {
++    for (int i = 0; i < 100; ++i) {
++        HeuristicTest::HResult hResult;
++        long long totalTime = clock.measure([&] { hResult = Hheuristic(*set); });
++        cout << "\n\nStrLen: " << set->getStringLength();
++        cout << "\tNumStr: " << set->getNumStrings() << endl;
++        cout << "Solution: " << hResult.value;
++        cout << "\tKeyChanges: " << hResult.keyChanges << endl;
++        cout << "SumCKTime: " << hResult.sumCKTime;
++        cout << "\tTotalTime: " << totalTime << endl;
++        if (hResult.keyChanges == 1) {
++            increment(totalTime, hResult.sumCKTime, hResult.loopTime);
++        }
++        rsg.fillStringSet(*set);
++    }
++}
++
++INSTANTIATE_TEST_CASE_P(CSFTests, HeuristicTest, Combine(Range(ulong(14), ulong(18), ulong(1)),
++                                                         Range(ulong(200), ulong(235), ulong(1))));
++
++
++
++
