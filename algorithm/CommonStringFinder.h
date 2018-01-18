@@ -46,14 +46,14 @@ public:
                                                          bool keyChanged)> &peekFunction = nullptr);
 
 protected:
-    bool checkKey(ulong &stringLength, ulong &numStrings, const char* key, char* const* data);
+    bool checkKeyAgainstAllStrings(ulong &stringLength, ulong &numStrings, const char* key, char* const* data);
     void incrementKey(char* key, const ulong &length);
     bool changeKey(char* key,
                    const StringSet &set,
                    ulong currentStrIndex,
                    std::list<ulong>* matchingStrings,
                    ulong* matchingLetters,
-                   std::vector<ulong> &changeablePositions);
+                   const std::vector<ulong> &changeablePositions);
 };
 
 #endif //AAL_COMMONSTRINGFINDER_H
