@@ -318,14 +318,18 @@ void solveWithConstantStrLen(const ulong &constStrLen, const ulong &initialNumSt
     CommonStringFinder csf;
     ExecutionTimeClock clock;
 
-    cout << left << setw(20) << " "
-         << setw(40) << "BRUTE-FORCE (n = " + to_string(constStrLen) + ")"
-         << setw(40) << "HEURISTIC (n = " + to_string(constStrLen) + ")" << endl;
-    cout << setw(20) << "m"
-         << setw(21) << "t(m)[µs]"
-         << setw(20) << "q(m)"
-         << setw(21) << "t(m)[µs]"
-         << setw(20) << "q(m)" << endl;
+    cout << left << setw(15) << " "
+         << setw(60) << "BRUTE-FORCE (n = " + to_string(constStrLen) + ")"
+         << setw(60) << "HEURISTIC (n = " + to_string(constStrLen) + ")" << endl;
+    cout << setw(15) << "m"
+         << setw(15) << "t(m)[ms]"
+         << setw(15) << "q(m)"
+         << setw(15) << "AKC"
+         << setw(15) << "Solutions"
+         << setw(15) << "t(m)[ms]"
+         << setw(15) << "q(m)"
+         << setw(15) << "AKC"
+         << setw(15) << "SR" << endl;
 
     const auto numCombinations = static_cast<ulong>(pow(2, constStrLen));
     const ulong medianNumStr = initialNumStrings + (numIncrements / 2) * stepNumStrings;
@@ -334,30 +338,55 @@ void solveWithConstantStrLen(const ulong &constStrLen, const ulong &initialNumSt
 
     long long medianTimeBru = 0;
     long long medianTimeHeu = 0;
+    ulong medianNumBruSuc = 0;
+    ulong medianNumHeuSuc = 0;
+    ulong medianSumBruKeyCh = 0;
+    ulong medianSumHeuKeyCh = 0;
+    CommonStringFinder::Result medianBruResult, medianHeuResult;
 
     StringSet medianSet(constStrLen, medianNumStr);
     loopWithProgressBar(numRepeats, [&] {
         rsg.fillStringSet(medianSet);
-        medianTimeBru += clock.measure([&] { csf.bruteForce(medianSet); });
-        medianTimeHeu += clock.measure([&] { csf.heuristic(medianSet); });
+        medianTimeBru += clock.measure([&] { medianBruResult = csf.bruteForce(medianSet); });
+        medianTimeHeu += clock.measure([&] { medianHeuResult = csf.heuristic(medianSet); });
+
+        if (medianBruResult.solutionFound()) ++medianNumBruSuc;
+        if (medianHeuResult.solutionFound()) ++medianNumHeuSuc;
+        medianSumBruKeyCh += medianBruResult.keyChanges;
+        medianSumHeuKeyCh += medianHeuResult.keyChanges;
     });
 
     for (ulong numStrings = initialNumStrings, i = 0; i < numIncrements; ++i, numStrings += stepNumStrings) {
-        long long timeBru = 0;
-        long long timeHeu = 0;
         double qBru = -1;
         double qHeu = -1;
 
+        long long timeBru = 0;
+        long long timeHeu = 0;
+        ulong numBruSuc = 0;
+        ulong numHeuSuc = 0;
+        ulong sumBruKeyCh = 0;
+        ulong sumHeuKeyCh = 0;
+
         if (numStrings == medianNumStr) {
+            qBru = qHeu = 1;
             timeBru = medianTimeBru;
             timeHeu = medianTimeHeu;
-            qBru = qHeu = 1;
+            numBruSuc = medianNumBruSuc;
+            numHeuSuc = medianNumHeuSuc;
+            sumBruKeyCh = medianSumBruKeyCh;
+            sumHeuKeyCh = medianSumHeuKeyCh;
         } else {
+            CommonStringFinder::Result bruResult, heuResult;
             StringSet set(constStrLen, numStrings);
             loopWithProgressBar(numRepeats, [&] {
                 rsg.fillStringSet(set);
-                timeBru += clock.measure([&] { csf.bruteForce(set); });
-                timeHeu += clock.measure([&] { csf.heuristic(set); });
+                timeBru += clock.measure([&] { bruResult = csf.bruteForce(set); });
+                timeHeu += clock.measure([&] { heuResult = csf.heuristic(set); });
+
+                if (bruResult.solutionFound()) ++numBruSuc;
+                if (heuResult.solutionFound()) ++numHeuSuc;
+                sumBruKeyCh += bruResult.keyChanges;
+                sumHeuKeyCh += heuResult.keyChanges;
             });
             ulong TBru = numCombinations * constStrLen * numStrings;
             ulong THeu = 1; // TODO implement
@@ -365,12 +394,16 @@ void solveWithConstantStrLen(const ulong &constStrLen, const ulong &initialNumSt
             qHeu = (double) (timeHeu * medianTHeu) / (THeu * medianTimeHeu);
         }
 
-        cout << left;
-        cout << setw(20) << numStrings
-             << setw(20) << timeBru
-             << setw(20) << qBru
-             << setw(20) << timeHeu
-             << setw(20) << qHeu << endl;
+        cout << left << setprecision(3) << fixed
+             << setw(15) << numStrings
+             << setw(15) << timeBru / 1000
+             << setw(15) << qBru
+             << setw(15) << (double) sumBruKeyCh / numRepeats
+             << setw(15) << numBruSuc
+             << setw(15) << timeHeu / 1000
+             << setw(15) << qHeu
+             << setw(15) << (double) sumHeuKeyCh / numRepeats
+             << setprecision(1) << (double) numHeuSuc * 100 / numBruSuc << " %" << endl;
     }
 }
 
@@ -380,14 +413,18 @@ void solveWithConstantNumStr(const ulong &constNumStr, const ulong &initialStrLe
     CommonStringFinder csf;
     ExecutionTimeClock clock;
 
-    cout << left << setw(20) << " "
-         << setw(40) << "BRUTE-FORCE (m = " + to_string(constNumStr) + ")"
-         << setw(40) << "HEURISTIC (m = " + to_string(constNumStr) + ")" << endl;
-    cout << setw(20) << "n"
-         << setw(21) << "t(n)[µs]"
-         << setw(20) << "q(n)"
-         << setw(21) << "t(n)[µs]"
-         << setw(20) << "q(n)" << endl;
+    cout << left << setw(15) << " "
+         << setw(60) << "BRUTE-FORCE (m = " + to_string(constNumStr) + ")"
+         << setw(60) << "HEURISTIC (m = " + to_string(constNumStr) + ")" << endl;
+    cout << setw(15) << "n"
+         << setw(15) << "t(n)[ms]"
+         << setw(15) << "q(n)"
+         << setw(15) << "AKC"
+         << setw(15) << "Solutions"
+         << setw(15) << "t(n)[ms]"
+         << setw(15) << "q(n)"
+         << setw(15) << "AKC"
+         << setw(15) << "SR" << endl;
 
     const ulong medianStrLen = initialStrLen + (numIncrements / 2) * stepStrLen;
     const ulong medianTBru = static_cast<ulong>(pow(2, medianStrLen)) * medianStrLen * constNumStr;
@@ -395,30 +432,55 @@ void solveWithConstantNumStr(const ulong &constNumStr, const ulong &initialStrLe
 
     long long medianTimeBru = 0;
     long long medianTimeHeu = 0;
+    ulong medianNumBruSuc = 0;
+    ulong medianNumHeuSuc = 0;
+    ulong medianSumBruKeyCh = 0;
+    ulong medianSumHeuKeyCh = 0;
+    CommonStringFinder::Result medianBruResult, medianHeuResult;
 
     StringSet medianSet(medianStrLen, constNumStr);
     loopWithProgressBar(numRepeats, [&] {
         rsg.fillStringSet(medianSet);
-        medianTimeBru += clock.measure([&] { csf.bruteForce(medianSet); });
-        medianTimeHeu += clock.measure([&] { csf.heuristic(medianSet); });
+        medianTimeBru += clock.measure([&] { medianBruResult = csf.bruteForce(medianSet); });
+        medianTimeHeu += clock.measure([&] { medianHeuResult = csf.heuristic(medianSet); });
+
+        if (medianBruResult.solutionFound()) ++medianNumBruSuc;
+        if (medianHeuResult.solutionFound()) ++medianNumHeuSuc;
+        medianSumBruKeyCh += medianBruResult.keyChanges;
+        medianSumHeuKeyCh += medianHeuResult.keyChanges;
     });
 
     for (ulong stringLength = initialStrLen, i = 0; i < numIncrements; ++i, stringLength += stepStrLen) {
-        long long timeBru = 0;
-        long long timeHeu = 0;
         double qBru = -1;
         double qHeu = -1;
 
+        long long timeBru = 0;
+        long long timeHeu = 0;
+        ulong numBruSuc = 0;
+        ulong numHeuSuc = 0;
+        ulong sumBruKeyCh = 0;
+        ulong sumHeuKeyCh = 0;
+
         if (stringLength == medianStrLen) {
+            qBru = qHeu = 1;
             timeBru = medianTimeBru;
             timeHeu = medianTimeHeu;
-            qBru = qHeu = 1;
+            numBruSuc = medianNumBruSuc;
+            numHeuSuc = medianNumHeuSuc;
+            sumBruKeyCh = medianSumBruKeyCh;
+            sumHeuKeyCh = medianSumHeuKeyCh;
         } else {
+            CommonStringFinder::Result bruResult, heuResult;
             StringSet set(stringLength, constNumStr);
             loopWithProgressBar(numRepeats, [&] {
                 rsg.fillStringSet(set);
-                timeBru += clock.measure([&] { csf.bruteForce(set); });
-                timeHeu += clock.measure([&] { csf.heuristic(set); });
+                timeBru += clock.measure([&] { bruResult = csf.bruteForce(set); });
+                timeHeu += clock.measure([&] { heuResult = csf.heuristic(set); });
+
+                if (bruResult.solutionFound()) ++numBruSuc;
+                if (heuResult.solutionFound()) ++numHeuSuc;
+                sumBruKeyCh += bruResult.keyChanges;
+                sumHeuKeyCh += heuResult.keyChanges;
             });
             ulong TBru = static_cast<ulong>(pow(2, stringLength)) * stringLength * constNumStr;
             ulong THeu = 1; // TODO implement
@@ -426,12 +488,16 @@ void solveWithConstantNumStr(const ulong &constNumStr, const ulong &initialStrLe
             qHeu = (double) (timeHeu * medianTHeu) / (THeu * medianTimeHeu);
         }
 
-        cout << left;
-        cout << setw(20) << stringLength
-             << setw(20) << timeBru
-             << setw(20) << qBru
-             << setw(20) << timeHeu
-             << setw(20) << qHeu << endl;
+        cout << left << setprecision(3) << fixed
+             << setw(15) << stringLength
+             << setw(15) << timeBru / 1000
+             << setw(15) << qBru
+             << setw(15) << (double) sumBruKeyCh / numRepeats
+             << setw(15) << numBruSuc
+             << setw(15) << timeHeu / 1000
+             << setw(15) << qHeu
+             << setw(15) << (double) sumHeuKeyCh / numRepeats
+             << setprecision(1) << (double) numHeuSuc * 100 / numBruSuc << " %" << endl;
     }
 }
 
