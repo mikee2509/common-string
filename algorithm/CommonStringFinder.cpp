@@ -106,10 +106,10 @@ CommonStringFinder::Result CommonStringFinder::heuristic(const StringSet &set) {
             if (changeablePositions.empty()) {
                 return Result(NO_SOLUTION, keyChanges);
             }
+            ++keyChanges;
             if (!changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions)) {
                 return Result(SOLUTION_NOT_FOUND, keyChanges);
             }
-            ++keyChanges;
         }
     }
 
@@ -199,8 +199,8 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(const String
                                                                                         const vector<ulong>* matchingStrings,
                                                                                         ulong currentStrIndex,
                                                                                         bool keyChanged)> &peekFunction) {
-    ulong stringLength = set.getStringLength();
-    ulong numStrings = set.getNumStrings();
+    const ulong &stringLength = set.getStringLength();
+    const ulong &numStrings = set.getNumStrings();
 
     char key[stringLength];
     char** data = set.getData();
@@ -211,6 +211,12 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(const String
     // For each String hold the number of letters which match with current key
     ulong matchingLetters[numStrings] = {0};
 
+    // Positions in key which can be changed by key change procedure
+    vector<ulong> changeablePositions(stringLength);
+
+    // Count the number of key changes needed in order to find a solution
+    ulong keyChanges = 0;
+
     // Initialize key to first string with *s replaced by 0s
     for (ulong i = 0; i < stringLength; ++i) {
         if (data[0][i] == '*') {
@@ -220,32 +226,33 @@ CommonStringFinder::Result CommonStringFinder::heuristicInteractive(const String
         }
     }
 
-    ulong keyChanges = 0;
     for (ulong str = 0; str < numStrings; ++str) {
-        vector<ulong> changeablePositions;
         for (ulong letter = 0; letter < stringLength; ++letter) {
             if (data[str][letter] == key[letter]) {
                 matchingLetters[str] += 1;
                 matchingStrings[letter].push_back(str);
             }
-            if (data[str][letter] != '*') {
-                changeablePositions.push_back(letter);
-            }
         }
         if (peekFunction != nullptr) {
             peekFunction(key, set, matchingLetters, matchingStrings, str, false);
         }
-        if (changeablePositions.empty()) {
-            return Result(NO_SOLUTION, keyChanges);
-        }
         if (matchingLetters[str] == 0) {
+            changeablePositions.clear();
+            for (ulong letter = 0; letter < stringLength; ++letter) {
+                if (data[str][letter] != '*') {
+                    changeablePositions.push_back(letter);
+                }
+            }
+            if (changeablePositions.empty()) {
+                return Result(NO_SOLUTION, keyChanges);
+            }
+            ++keyChanges;
             if (!changeKey(key, set, str, matchingStrings, matchingLetters, changeablePositions)) {
                 return Result(SOLUTION_NOT_FOUND, keyChanges);
             }
             if (peekFunction != nullptr) {
                 peekFunction(key, set, matchingLetters, matchingStrings, str, true);
             }
-            ++keyChanges;
         }
     }
 
