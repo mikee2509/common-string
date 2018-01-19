@@ -11,17 +11,24 @@ void static printUsage(const char* name);
 StringSet readDataFromStdin();
 int t1Mode(vector<string> &args);
 int t2Mode(vector<string> &args);
-void solveOnce(const StringSet &set, bool withInteractiveMode);
-void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
-                  const vector<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged);
 int t3Mode(vector<string> &args);
 int t4Mode(vector<string> &args);
+void peekFunction(const char* key, const StringSet &set, const ulong* matchingLetters,
+                  const vector<ulong>* matchingStrings, ulong currentStrIndex, bool keyChanged);
+void solveOnce(const StringSet &set, bool withInteractiveMode);
+void solveWithConstantStrLen(const ulong &constStrLen, const ulong &initialNumStrings, const ulong &stepNumStrings,
+                             const ulong &numIncrements, const ulong &numRepeats);
+void solveWithConstantNumStr(const ulong &constNumStr, const ulong &initialStrLen, const ulong &stepStrLen,
+                             const ulong &numIncrements, const ulong &numRepeats);
+void solveWithIncrements(const ulong &initialStrLen, const ulong &initialNumStrings, const ulong &numIncrements,
+                         const ulong &stepStrLen, const ulong &stepNumStrings, const ulong &numRepeats);
+void loopWithProgressBar(ulong numRuns, function<void()> fun);
+
 
 static const char* const kName = "AAL";
 static const char* const kFileError = "File error";
 static const int kError = 1;
 
-int t4Mode(vector<string> &args);
 int main(int argc, char* argv[]) {
     vector<string> args(argv + 1, argv + argc + !argc);
     int ret;
@@ -243,88 +250,28 @@ int t3Mode(vector<string> &args) {
         return kError;
     }
 
+    if (numIncrements <= 0) {
+        return kError;
+    }
+    if (stepStrLen == 0 && stepNumStrings > 0) {
+        solveWithConstantStrLen(initialStrLen, initialNumStrings, stepNumStrings, numIncrements, numRepeats);
+        return 0;
+    }
+    if (stepNumStrings == 0 && stepStrLen > 0) {
+        solveWithConstantNumStr(initialNumStrings, initialStrLen, stepStrLen, numIncrements, numRepeats);
+        return 0;
+    }
+    solveWithIncrements(initialStrLen, initialNumStrings, numIncrements, stepStrLen, stepNumStrings, numRepeats);
+    return 0;
+}
+
+void solveWithIncrements(const ulong &initialStrLen, const ulong &initialNumStrings, const ulong &numIncrements,
+                         const ulong &stepStrLen, const ulong &stepNumStrings, const ulong &numRepeats) {
     RandomStringGenerator rsg;
     CommonStringFinder csf;
     ExecutionTimeClock clock;
     ulong stringLength = initialStrLen;
     ulong numStrings = initialNumStrings;
-
-    if (stepStrLen == 0 && numIncrements > 0) {
-        cout << "BRUTE FORCE (n = " << stringLength << ")" << endl;
-        cout << setw(20) << left << "m"
-             << setw(20) << left << "t(m)[µs]"
-             << setw(20) << left << " q(m)" << endl;
-
-        auto numCombinations = static_cast<ulong>(pow(2, stringLength));
-        long long medianTime = 0;
-        ulong medianNumStr = initialNumStrings + (numIncrements / 2) * stepNumStrings;
-        ulong medianT = numCombinations * stringLength * medianNumStr;
-        StringSet medianSet(stringLength, medianNumStr);
-        for (ulong i = 0; i < numRepeats; ++i) {
-            rsg.fillStringSet(medianSet);
-            medianTime += clock.measure([&] { csf.bruteForce(medianSet); });
-        }
-
-        for (ulong i = 0; i < numIncrements; ++i) {
-            long long totelTime = 0;
-            StringSet set(stringLength, numStrings);
-            for (ulong j = 0; j < numRepeats; ++j) {
-                rsg.fillStringSet(set);
-                totelTime += clock.measure([&] { csf.bruteForce(set); });
-            }
-
-            ulong T = numCombinations * stringLength * numStrings;
-            double q = (double) (totelTime * medianT) / (T * medianTime);
-
-            cout << setw(20) << left << numStrings
-                 << setw(20) << left << totelTime
-                 << setw(20) << left << q << endl;
-
-            numStrings += stepNumStrings;
-        }
-        cout << endl;
-
-        stringLength = initialStrLen;
-        numStrings = initialNumStrings;
-    }
-
-    if (stepNumStrings == 0 && numIncrements > 0) {
-        cout << "BRUTE FORCE (m = " << numStrings << ")" << endl;
-        cout << setw(20) << left << "n"
-             << setw(20) << left << "t(n)[µs]"
-             << setw(20) << left << " q(n)" << endl;
-
-        long long medianTime = 0;
-        ulong medianStrLen = initialStrLen + (numIncrements / 2) * stepStrLen;
-        ulong medianT = static_cast<ulong>(pow(2, medianStrLen)) * medianStrLen * numStrings;
-        StringSet medianSet(medianStrLen, numStrings);
-        for (ulong i = 0; i < numRepeats; ++i) {
-            rsg.fillStringSet(medianSet);
-            medianTime += clock.measure([&] { csf.bruteForce(medianSet); });
-        }
-
-        for (ulong i = 0; i < numIncrements; ++i) {
-            long long totelTime = 0;
-            StringSet set(stringLength, numStrings);
-            for (ulong j = 0; j < numRepeats; ++j) {
-                rsg.fillStringSet(set);
-                totelTime += clock.measure([&] { csf.bruteForce(set); });
-            }
-
-            ulong T = static_cast<ulong>(pow(2, stringLength)) * stringLength * numStrings;
-            double q = (double) (totelTime * medianT) / (T * medianTime);
-
-            cout << setw(20) << left << stringLength
-                 << setw(20) << left << totelTime
-                 << setw(20) << left << q << endl;
-
-            stringLength += stepStrLen;
-        }
-        cout << endl;
-
-        stringLength = initialStrLen;
-        numStrings = initialNumStrings;
-    }
 
     for (ulong i = 0; i < numIncrements; ++i) {
         long long totalTimeBrute = 0;
@@ -335,7 +282,11 @@ int t3Mode(vector<string> &args) {
         ulong sumHKeyChanges = 0;
         CommonStringFinder::Result bruteResult, heuristicResult;
         StringSet set(stringLength, numStrings);
-        for (ulong j = 0; j < numRepeats; ++j) {
+
+        cout << "String length: " << stringLength << "\t Number of strings: " << numStrings
+             << "\t Number of runs: " << numRepeats << endl;
+
+        loopWithProgressBar(numRepeats, [&] {
             rsg.fillStringSet(set);
             totalTimeBrute += clock.measure([&] { bruteResult = csf.bruteForce(set); });
             totalTimeHeuristic += clock.measure([&] { heuristicResult = csf.heuristic(set); });
@@ -343,9 +294,8 @@ int t3Mode(vector<string> &args) {
             if (heuristicResult.solutionFound()) ++numHeuSuccesses;
             sumBKeyChanges += bruteResult.keyChanges;
             sumHKeyChanges += heuristicResult.keyChanges;
-        }
-        cout << "String length: " << stringLength << "\t Number of strings: " << numStrings
-             << "\t Number of runs: " << numRepeats << endl;
+        });
+
         cout << "Brute-force: " << "\t"
              << setw(15) << left << to_string(totalTimeBrute) + " µs "
              << "Average key changes: " << fixed << setprecision(3) << (double) sumBKeyChanges / numRepeats << "\t"
@@ -360,8 +310,129 @@ int t3Mode(vector<string> &args) {
         stringLength += stepStrLen;
         numStrings += stepNumStrings;
     }
+}
 
-    return 0;
+void solveWithConstantStrLen(const ulong &constStrLen, const ulong &initialNumStrings, const ulong &stepNumStrings,
+                             const ulong &numIncrements, const ulong &numRepeats) {
+    RandomStringGenerator rsg;
+    CommonStringFinder csf;
+    ExecutionTimeClock clock;
+
+    cout << left << setw(20) << " "
+         << setw(40) << "BRUTE-FORCE (n = " + to_string(constStrLen) + ")"
+         << setw(40) << "HEURISTIC (n = " + to_string(constStrLen) + ")" << endl;
+    cout << setw(20) << "m"
+         << setw(21) << "t(m)[µs]"
+         << setw(20) << "q(m)"
+         << setw(21) << "t(m)[µs]"
+         << setw(20) << "q(m)" << endl;
+
+    const auto numCombinations = static_cast<ulong>(pow(2, constStrLen));
+    const ulong medianNumStr = initialNumStrings + (numIncrements / 2) * stepNumStrings;
+    const ulong medianTBru = numCombinations * constStrLen * medianNumStr;
+    const ulong medianTHeu = 1; //TODO implement
+
+    long long medianTimeBru = 0;
+    long long medianTimeHeu = 0;
+
+    StringSet medianSet(constStrLen, medianNumStr);
+    loopWithProgressBar(numRepeats, [&] {
+        rsg.fillStringSet(medianSet);
+        medianTimeBru += clock.measure([&] { csf.bruteForce(medianSet); });
+        medianTimeHeu += clock.measure([&] { csf.heuristic(medianSet); });
+    });
+
+    for (ulong numStrings = initialNumStrings, i = 0; i < numIncrements; ++i, numStrings += stepNumStrings) {
+        long long timeBru = 0;
+        long long timeHeu = 0;
+        double qBru = -1;
+        double qHeu = -1;
+
+        if (numStrings == medianNumStr) {
+            timeBru = medianTimeBru;
+            timeHeu = medianTimeHeu;
+            qBru = qHeu = 1;
+        } else {
+            StringSet set(constStrLen, numStrings);
+            loopWithProgressBar(numRepeats, [&] {
+                rsg.fillStringSet(set);
+                timeBru += clock.measure([&] { csf.bruteForce(set); });
+                timeHeu += clock.measure([&] { csf.heuristic(set); });
+            });
+            ulong TBru = numCombinations * constStrLen * numStrings;
+            ulong THeu = 1; // TODO implement
+            qBru = (double) (timeBru * medianTBru) / (TBru * medianTimeBru);
+            qHeu = (double) (timeHeu * medianTHeu) / (THeu * medianTimeHeu);
+        }
+
+        cout << left;
+        cout << setw(20) << numStrings
+             << setw(20) << timeBru
+             << setw(20) << qBru
+             << setw(20) << timeHeu
+             << setw(20) << qHeu << endl;
+    }
+}
+
+void solveWithConstantNumStr(const ulong &constNumStr, const ulong &initialStrLen, const ulong &stepStrLen,
+                             const ulong &numIncrements, const ulong &numRepeats) {
+    RandomStringGenerator rsg;
+    CommonStringFinder csf;
+    ExecutionTimeClock clock;
+
+    cout << left << setw(20) << " "
+         << setw(40) << "BRUTE-FORCE (m = " + to_string(constNumStr) + ")"
+         << setw(40) << "HEURISTIC (m = " + to_string(constNumStr) + ")" << endl;
+    cout << setw(20) << "n"
+         << setw(21) << "t(n)[µs]"
+         << setw(20) << "q(n)"
+         << setw(21) << "t(n)[µs]"
+         << setw(20) << "q(n)" << endl;
+
+    const ulong medianStrLen = initialStrLen + (numIncrements / 2) * stepStrLen;
+    const ulong medianTBru = static_cast<ulong>(pow(2, medianStrLen)) * medianStrLen * constNumStr;
+    const ulong medianTHeu = 1; //TODO implement
+
+    long long medianTimeBru = 0;
+    long long medianTimeHeu = 0;
+
+    StringSet medianSet(medianStrLen, constNumStr);
+    loopWithProgressBar(numRepeats, [&] {
+        rsg.fillStringSet(medianSet);
+        medianTimeBru += clock.measure([&] { csf.bruteForce(medianSet); });
+        medianTimeHeu += clock.measure([&] { csf.heuristic(medianSet); });
+    });
+
+    for (ulong stringLength = initialStrLen, i = 0; i < numIncrements; ++i, stringLength += stepStrLen) {
+        long long timeBru = 0;
+        long long timeHeu = 0;
+        double qBru = -1;
+        double qHeu = -1;
+
+        if (stringLength == medianStrLen) {
+            timeBru = medianTimeBru;
+            timeHeu = medianTimeHeu;
+            qBru = qHeu = 1;
+        } else {
+            StringSet set(stringLength, constNumStr);
+            loopWithProgressBar(numRepeats, [&] {
+                rsg.fillStringSet(set);
+                timeBru += clock.measure([&] { csf.bruteForce(set); });
+                timeHeu += clock.measure([&] { csf.heuristic(set); });
+            });
+            ulong TBru = static_cast<ulong>(pow(2, stringLength)) * stringLength * constNumStr;
+            ulong THeu = 1; // TODO implement
+            qBru = (double) (timeBru * medianTBru) / (TBru * medianTimeBru);
+            qHeu = (double) (timeHeu * medianTHeu) / (THeu * medianTimeHeu);
+        }
+
+        cout << left;
+        cout << setw(20) << stringLength
+             << setw(20) << timeBru
+             << setw(20) << qBru
+             << setw(20) << timeHeu
+             << setw(20) << qHeu << endl;
+    }
 }
 
 int t4Mode(vector<string> &args) {
@@ -383,6 +454,24 @@ int t4Mode(vector<string> &args) {
     long long totalTimeHeuristic = 0;
     CommonStringFinder::Result bResult, hResult;
 
+    loopWithProgressBar(numRuns, [&] {
+        totalTimeBrute += clock.measure([&] { bResult = csf.bruteForce(set); });
+        totalTimeHeuristic += clock.measure([&] { hResult = csf.heuristic(set); });
+    });
+
+    cout << "String length: " << set.getStringLength() << "   Number of strings: " << set.getNumStrings()
+         << "   Number of runs: " << numRuns << endl;
+    cout << "Brute-force: " << bResult << "\t"
+         << setw(15) << left << to_string(totalTimeBrute) + " µs "
+         << "Key changes: " << bResult.keyChanges << endl;
+    cout << "Heuristic:   " << hResult << "\t"
+         << setw(15) << left << to_string(totalTimeHeuristic) + " µs "
+         << "Key changes: " << hResult.keyChanges << "\t" << endl;
+
+    return 0;
+}
+
+void loopWithProgressBar(ulong numRuns, function<void()> fun) {
     const int barWidth = 70;
     ulong update;
     if (numRuns > barWidth) {
@@ -403,21 +492,10 @@ int t4Mode(vector<string> &args) {
             cout.flush();
         }
 
-        totalTimeBrute += clock.measure([&] { bResult = csf.bruteForce(set); });
-        totalTimeHeuristic += clock.measure([&] { hResult = csf.heuristic(set); });
+        fun();
     }
     for (int i = 0; i < barWidth + 8; ++i) {
         cout << " ";
-    }
-
-    cout << "\rString length: " << set.getStringLength() << "   Number of strings: " << set.getNumStrings()
-         << "   Number of runs: " << numRuns << endl;
-    cout << "Brute-force: " << bResult << "\t"
-         << setw(15) << left << to_string(totalTimeBrute) + " µs "
-         << "Key changes: " << bResult.keyChanges << endl;
-    cout << "Heuristic:   " << hResult << "\t"
-         << setw(15) << left << to_string(totalTimeHeuristic) + " µs "
-         << "Key changes: " << hResult.keyChanges << "\t" << endl;
-
-    return 0;
+    };
+    cout << "\r";
 }
